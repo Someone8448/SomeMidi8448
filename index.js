@@ -88,6 +88,7 @@ bot.chat(foundmidi.join(" | "))
 }
 if (cmd === `${prefix}download` | cmd === `${prefix}d`) {
 if (args.length == 0) {bot.chat(`Usage: ${prefix}download (file)`)} else {
+try {
 var file = msg.a.split(' ')[1];
 // Path at which image will be downloaded
 var filePath = midipath; 
@@ -98,10 +99,14 @@ dl.on('end', d => {
 bot.chat(`Download finished; attempting to play...`)
 playmidi(d.filePath)
 })
+dl.on('error', () => bot.chat("There was an error."))
 bot.chat("Starting download.")
 dl.start();
 } else {
 bot.chat("Please input an actual MIDI.")
+}
+} catch (error) {
+bot.chat('There was an error.')
 }
 }
 }
