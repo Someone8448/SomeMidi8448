@@ -1,7 +1,8 @@
 var prefix = "/"
+var deb = false
 var sus = false
 // sustain
-var cursor = true
+var cursor = false
 // cursor
 var midipath = "./"
 
@@ -37,7 +38,7 @@ var cmd = msg.a.split(' ')[0].toLowerCase()
   var args = msg.a.split(" ");
       args = args.slice(1);
 if (cmd === `${prefix}help` | cmd === `${prefix}h`) {
-multichat(`Commands: ${prefix}help (${prefix}h), ${prefix}play (${prefix}p), ${prefix}list (${prefix}l), ${prefix}download (${prefix}d), ${prefix}stop (${prefix}s), ${prefix}about (${prefix}ab), ${prefix}sustain (${prefix}sus), ${prefix}cursor (${prefix}c)`)
+multichat(`Commands: ${prefix}help (${prefix}h), ${prefix}play (${prefix}p), ${prefix}list (${prefix}l), ${prefix}download (${prefix}d), ${prefix}stop (${prefix}s), ${prefix}about (${prefix}ab), ${prefix}sustain (${prefix}sus), ${prefix}cursor (${prefix}c), ${prefix}deblack (${prefix}deb)`)
 }
 if (cmd === `${prefix}play` | cmd === `${prefix}p`) {
 if (args.length == 0) {bot.chat(`Usage: ${prefix}play (ID or name)`)} else {
@@ -113,6 +114,12 @@ if (cmd === `${prefix}sus` | cmd === `${prefix}sustain`) {
 sus = !sus
 bot.chat(`Sustain set to ${sus}`)
 }
+
+if (cmd === `${prefix}deb` | cmd === `${prefix}deblack`) {
+deb = !deb
+bot.chat(`Deblacking set to ${deb}`)
+}
+
 if (cmd === `${prefix}c` | cmd === `${prefix}cursor`) {
 cursor = !cursor
 bot.chat(`Cursor Movement set to ${cursor}`)
@@ -121,22 +128,30 @@ bot.chat(`Cursor Movement set to ${cursor}`)
 
 
    const midikeys = ["a-1", "as-1", "b-1", "c0", "cs0", "d0", "ds0", "e0", "f0", "fs0", "g0", "gs0", "a0", "as0", "b0", "c1", "cs1", "d1", "ds1", "e1", "f1", "fs1", "g1", "gs1", "a1", "as1", "b1", "c2", "cs2", "d2", "ds2", "e2", "f2", "fs2", "g2", "gs2", "a2", "as2", "b2", "c3", "cs3", "d3", "ds3", "e3", "f3", "fs3", "g3", "gs3", "a3", "as3", "b3", "c4", "cs4", "d4", "ds4", "e4", "f4", "fs4", "g4", "gs4", "a4", "as4", "b4", "c5", "cs5", "d5", "ds5", "e5", "f5", "fs5", "g5", "gs5", "a5", "as5", "b5", "c6", "cs6", "d6", "ds6", "e6", "f6", "fs6", "g6", "gs6", "a6", "as6", "b6", "c7"];
+let keypresses = {}
+midikeys.forEach(k => {keypresses[k] = false})
     const Midi = new MidiPlayer.Player(function (event) {
         setTimeout(Midi.playLoop.bind(Midi), 0);
+	if (nq <= 0) return;
+        if ( (nq <= maxnq /4 || deb === true) && (event.name === "Note on" && event.velocity <= 54)) return
 //if (Math.floor(Math.random() * 5) == 4) {
 //tick = event.tick
 //}
         let midikey = midikeys[event.noteNumber - 21];
-        let midivel = event.velocity / 120;
+        let midivel = event.velocity / 127;
         if (!!!event.name.startsWith("Note")) return;
 
         if (event.name == "Note on") {
 if (midikey !== undefined) { 
-bot.client.startNote(midikey, midivel)           
+bot.client.startNote(midikey, midivel)
+keypresses[midikey] = true
+nq--         
 }
         } else {
-if (sus === false && midikey !== undefined) {
+if ((sus === false || nq <= maxnq / 2) && midikey !== undefined && keypresses[midikey] === true) {
 bot.client.stopNote(midikey)
+keypresses[midikey] = false
+nq--
 }
 }
     })
@@ -175,3 +190,9 @@ bot.client.moveMouse((( (Midi.tick) / length ) * 80) + 10 ,50)
 },200)
 }, 10000)
 //bot.client.moveMouse(((event.tick / start) * 80) + 10 ,50)
+
+
+nq = 12000
+maxnq = 12000
+setInterval(() => {nq = maxnq},12000)
+bot.client.on('nq', nq => {maxnq = nq.max})
