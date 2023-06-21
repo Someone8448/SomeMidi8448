@@ -199,5 +199,6 @@ bot.client.moveMouse((( (Midi.tick) / length ) * 80) + 10 ,50)
 
 nq = 12000
 maxnq = 12000
-setInterval(() => {nq = maxnq},12000)
-bot.client.on('nq', nq => {maxnq = nq.max})
+nqint = setInterval(() => {nq = maxnq},6000)
+bot.client.on('nq', msg => {nqint._repeat = msg.allowance + 2000;maxnq = msg.max; nq = msg.max})
+
